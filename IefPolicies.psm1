@@ -1079,7 +1079,7 @@ function New-IEFPoliciesKey {
     }
     if(($null -ne $keyset.error) -and ($keyset.error.code -eq 'AADB2C95028')) {
         $keySetId = ("B2C_1A_{0}" -f $name)
-        Write-Host ("Adding key to an existing keyset {0}." -f $keySetId)        
+        Write-Host ("Adding key to an existing keyset {0}." -f $keySetId)
     } else {
         $keySetId = $keyset.id        
         Write-Host ("Created keyset {0}" -f $keySetid)              
@@ -1091,10 +1091,12 @@ function New-IEFPoliciesKey {
         Write-Debug "New-IefPoliciesKeySet: generating key"
         $keyset = Invoke-RestMethod -UseBasicParsing  -Uri ("https://graph.microsoft.com/beta/trustFramework/keySets/{0}/generateKey" -f $keySetId) `
             -Method Post -Headers $headers -Body (@{ use = $purpose; kty = $keyType; nbf = $nbf ; exp = $exp} | ConvertTo-Json)  -SkipHttpErrorCheck -StatusCodeVariable httpStatus
-    } else {
+    } elseif (![string]::IsNullOrWhiteSpace($value)) {
         write-Debug "New-IefPoliciesKeySet: Uploading secret"
         $keyset = Invoke-RestMethod -UseBasicParsing  -Uri ("https://graph.microsoft.com/beta/trustFramework/keySets/{0}/uploadSecret" -f $keySetId) `
             -Method Post -Headers $headers -Body (@{ use = $purpose; k = $value; nbf = $nbf ; exp = $exp} | ConvertTo-Json)  -SkipHttpErrorCheck -StatusCodeVariable httpStatus        
+    } else {
+        Write-Error ("Unable to upload secret with value '{0}'." -f $value)
     }
     if(200 -eq $httpStatus) {
         Write-Host ("{0} created/updated" -f $name)
